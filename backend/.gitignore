@@ -1,2 +1,3 @@
-.triviaenv
+backend/triviavenv/
+env/
 __pycache__
