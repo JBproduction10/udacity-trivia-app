@@ -13,3 +13,6 @@ ehthumbs.db
 Thumbs.db
 env/
 frontend/node_modules/
+backend/triviavenv/
+backend/.env
+backend/__pycache__
