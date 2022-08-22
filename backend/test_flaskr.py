@@ -40,12 +40,22 @@ class TriviaTestCase(unittest.TestCase):
     Completed
     Write at least one test for each test for successful operation and for expected errors.
     """
+    def test_get_pagination_questions(self):
+        res = self.client().get("/questions?page=1")
+        data = json.loads(res.data)
+        
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['total_questions'])
+        self.assertTrue(len(data['questions']))
+        
     def test_get_categories(self):
         res = self.client().get("/categories")
         data = json.loads(res.data)
         
         self.assertEqual(res.status_code, 200)
-        self.assertTrue(data['categories'])
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['total_categories'])
         
     def test_405_get_categories(self):
         res= self.client().delete("/categories")
@@ -60,18 +70,20 @@ class TriviaTestCase(unittest.TestCase):
         res = self.client().get('/questions')
         data = json.loads(res.data)
         
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(data['success'], False)
-        self.assertEqual(data['error'], 404)
-        self.assertEqual(data['message'], 'Error: not found')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['categories'])
+        self.assertTrue(data['questions'])
         
     def test_delete_question(self):
-        res = self.client().delete("/questions")
+        id = Question.query.all()[-1]
+        self.client().delete("/questions/2")
+        res = Question.query.filter(Question.id == 2).one_or_none()
         data = json.loads(res.data)
         
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
-        self.assertEqual(data['question_id'], 4)
+        self.assertEqual(data['question_id'], 2)
         
     def test_404_delete_question(self):
         res = self.client().delete("/questions/200")
@@ -87,20 +99,21 @@ class TriviaTestCase(unittest.TestCase):
                                 json={
                                     "question": "This is a question",
                                     "answer": "This is an answer",
-                                    "difficulty": 10,
+                                    "difficulty": 5,
                                     "category": 3
                                 })    
         data = json.loads(res.data)
         
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
+        self.assertTrue(data['questions'])
         
     def test_500_add_question(self):
         res = self.client().post("/questions",
                                 json={
                                     "question": "This is a question",
                                     "answer": "This is an answer",
-                                    "difficulty": 10,
+                                    "difficulty": 5,
                                     "category": 3
                                 })
         data = json.loads(res.data)
@@ -111,17 +124,18 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['message'], "Error: server error")
         
     def test_search_question(self):
-        res = self.client().post("/questions", json={
-            "searchTerm": "title"
+        res = self.client().post("/questions/search", json={
+            "searchTerm": "classes"
         })
         data = json.loads(res.data)
         
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
         self.assertTrue(data['questions'])
         self.assertTrue(data['totalQuestions'])
         
-    def test_402_search_question(self):
-        res = self.client().post("/questions", json={'s': "title"})
+    def test_422_search_question(self):
+        res = self.client().post("/questions/search", json={'s': "classes"})
         data = json.loads(res.data)
         
         self.assertEqual(res.status_code, 422)
@@ -139,7 +153,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(len(data['questions']))
         
     def test_404_get_questions_by_category(self):
-        res = self.client().get("/categories/1200/questions")
+        res = self.client().get("/categories/18200/questions")
         data = json.loads(res.data)
         
         self.assertEqual(res.status_code, 404)
@@ -149,13 +163,14 @@ class TriviaTestCase(unittest.TestCase):
         
     def test_quiz(self):
         res = self.client().post("/quizzes", json={"quiz_category": {"type":"Sports", "id": 1},
-                                                    "previous_questions": [4, 3, 1]})
+                                                    "previous_questions": [1,3,5]})
         data = json.loads(res.data)
         
         self.assertEqual(res.status_code, 200)
-        self.assertTrue(data['question'])
+        self.assertEqual(data['success'], True)
+        self.assertTrue(len(data['questions']))
         
-    def test_4004_quiz(self):
+    def test_404_quiz(self):
         res = self.client().post("/quizzes", json={"quiz_category": {"type":"zizag", "id": 3},
                                                     "previous_questions": [4, 3, 1]})
         data = json.loads(res.data)

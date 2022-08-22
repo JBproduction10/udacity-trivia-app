@@ -244,12 +244,17 @@ def create_app(test_config=None):
             abort(400)
 
         if category['id'] != 0:
-            selection = Question.query.filter(
-                Question.id.notin_(prev_questions)).all()
+            selection = Question.query.filter(Question.category == category['id']).filter(
+                Question.id.notin_(prev_questions)).order_by(Question.id).all()
             currentQuestion = paginate_questions(request, selection)
+            # selection = Question.query.filter(
+            #     Question.id.notin_(prev_questions)).all()
+            # currentQuestion = paginate_questions(request, selection)
         else:
-            selection = Question.query.order_by(category == category['id']).filter(
-                Question.id.notin_(prev_questions)).all()
+            selection = Question.query.filter_by(category=category['id']).filter(
+                Question.id.notin_((prev_questions))).all()
+            # selection = Question.query.order_by(category == category['id']).filter(
+            #     Question.id.notin_(prev_questions)).all()
 
         if len(currentQuestion) > 0:
             next_question = random.choice(currentQuestion)
