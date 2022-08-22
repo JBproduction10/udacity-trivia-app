@@ -1,6 +1,4 @@
 import os
-from secrets import choice
-from unicodedata import category
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -141,25 +139,28 @@ def create_app(test_config=None):
         category = body.get("category", None)
         difficulty = body.get("difficulty", None)
 
-        try:
-            question = Question(question=question, answer=answer,
-                                category=category, difficulty=difficulty)
-            question.insert()
+        question = Question(question=question, answer=answer,
+                            category=category, difficulty=difficulty)
+        selection = Question.query.order_by(Question.id).all()
+        currentQuestion = paginate_questions(request, selection)
 
-            selection = Question.query.order_by(Question.id).all()
-            current_question = paginate_questions(request, selection)
+        if question is None:
+            abort(404)
+        else:
+            try:
+
+                db.session.add(question)
+                db.session.commit()
+
+            except:
+                db.session.rollback()
 
             return jsonify(
                 {
                     "success": True,
-                    "created": question.id,
-                    "questions": current_question,
+                    "questions": currentQuestion,
                     "total_questions": len(Question.query.all())
-                }
-            )
-
-        except:
-            abort(404)
+                })
 
     """
     @Completed:
@@ -234,28 +235,31 @@ def create_app(test_config=None):
     """
     @app.route("/quizzes", methods=['POST'])
     def play():
-        try:
-            body = request.get_json()
-            prev_questions = body.get('previous_questions', None)
-            category = body.get('quiz_category', None)
+        body = request.get_json()
+        prev_questions = body.get('previous_questions', None)
+        category = body.get('quiz_category', None)
 
-            question = Question.query
-            if category['id'] != 0:
-                questions = Question.query.filter_by(category=category['id']).filter(
-                    Question.id.notin_((prev_questions))).all()
-            else:
-                questions = Question.query.filter(
-                    Question.id.notin_((prev_questions))).all()
+        questions = Question.query.all()
+        if (prev_questions is None) and (category['id'] is None):
+            abort(400)
 
-            if len(questions) > 0:
-                next_question = random.choice(questions).format()
+        if category['id'] != 0:
+            selection = Question.query.filter(
+                Question.id.notin_(prev_questions)).all()
+            currentQuestion = paginate_questions(request, selection)
+        else:
+            selection = Question.query.order_by(Question.category == category['id']).filter(
+                Question.id.notin_(prev_questions)).all()
 
-            return jsonify({
-                'question': next_question,
-                'success': True
-            })
-        except:
-            abort(422)
+        if len(currentQuestion) > 0:
+            next_question = random.choice(currentQuestion)
+
+        return jsonify({
+            'success': True,
+            "question": next_question,
+            'totalQuestions': len(questions),
+            "category": category
+        })
 
     """
     @completed:
