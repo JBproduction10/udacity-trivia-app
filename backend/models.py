@@ -1,13 +1,10 @@
 import os
 from sqlalchemy import Column, String, Integer, create_engine
 from flask_sqlalchemy import SQLAlchemy
+from setting import database_host, database_name, database_password, database_user
 import json
 #from flask_migrate import Migrate
 
-database_host = 'localhost:5432'
-database_user = 'postgres'
-database_password = 'jbyoung10'
-database_name = 'triviapp'
 database_path = 'postgresql+psycopg2://{}:{}@{}/{}'.format(
     database_user, database_password, database_host, database_name)
 
