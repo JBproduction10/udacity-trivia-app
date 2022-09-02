@@ -251,7 +251,7 @@ def create_app(test_config=None):
             #     Question.id.notin_(prev_questions)).all()
             # currentQuestion = paginate_questions(request, selection)
         else:
-            selection = Question.query.filter_by(category=category['id']).filter(
+            selection = Question.query.filter_by(category==category['id']).filter(
                 Question.id.notin_((prev_questions))).all()
             # selection = Question.query.order_by(category == category['id']).filter(
             #     Question.id.notin_(prev_questions)).all()
